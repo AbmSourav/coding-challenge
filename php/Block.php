@@ -124,7 +124,7 @@ class Block {
 				'post_status'				=> 'any',
 				'date_query' => array(
 					array(
-						'hour'      => 2,
+						'hour'      => 9,
 						'compare'   => '>=',
 					),
 					array(
