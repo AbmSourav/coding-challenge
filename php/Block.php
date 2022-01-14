@@ -95,6 +95,7 @@ class Block {
 			<p>
 				<?php 
 				$post_id = isset( $_GET['post_id'] ) ? (int) $_GET['post_id'] : get_the_ID();
+				$post_id = esc_html( $post_id );
 				/* translators: 1: text, 2: post id */
 				printf( '%1$s %2$s',
 					__( 'The current post ID is', 'site-counts' ),
