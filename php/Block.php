@@ -124,7 +124,7 @@ class Block {
 				'post_status'				=> 'any',
 				'date_query' => array(
 					array(
-						'hour'      => 9,
+						'hour'      => 2,
 						'compare'   => '>=',
 					),
 					array(
@@ -160,14 +160,15 @@ class Block {
 			<ul>
 				<?php
 				$count = 0;
-				foreach ( $query->posts as $post ) :
+				while ( $query->have_posts() ) :
+					$query->the_post();
 					$count++;
-					if ( $post->ID == $post_id ) continue;
+					if ( get_the_ID() == $post_id ) continue;
 					?>
-					<li><?php echo esc_html( $post->post_title ); ?></li>
+					<li><?php the_title(); ?></li>
 					<?php
 					if ( $count > 5 ) break;
-				endforeach;
+				endwhile;
 				?>
 			</ul>
 			<?php
