@@ -66,63 +66,111 @@ class Block {
 		$post_types = get_post_types(  [ 'public' => true ] );
 		$class_name = $attributes['className'];
 		ob_start();
-
 		?>
-        <div class="<?php echo $class_name; ?>">
-			<h2>Post Counts</h2>
+        <div class="<?php echo esc_attr( $class_name ); ?>">
+			<h2><?php _e( "Post Counts", "site-counts" ); ?></h2>
 			<ul>
-			<?php
-			foreach ( $post_types as $post_type_slug ) :
-                $post_type_object = get_post_type_object( $post_type_slug  );
-                $post_count = count(
-                    get_posts(
-						[
-							'post_type' => $post_type_slug,
-							'posts_per_page' => -1,
-						]
-					)
-                );
-
+				<?php
+				foreach ( $post_types as $post_type_slug ) :
+					$post_type_object = get_post_type_object( $post_type_slug  );
+					$post_count = wp_count_posts( $post_type_slug );
+					if ( $post_count->publish !== 0 ) :
+						?>
+						<li>
+							<?php
+							/* translators: 1: text, 2: post count, 3: post type name */
+							printf( '%1$s %2$s %3$s',
+								__( 'There are', 'site-counts' ),
+								$post_count->publish,
+								esc_html( $post_type_object->labels->name )
+							);
+							?>
+						</li>
+						<?php
+					endif;
+				endforeach;
 				?>
-				<li><?php echo 'There are ' . $post_count . ' ' .
-					  $post_type_object->labels->name . '.'; ?></li>
-			<?php endforeach;	?>
-			</ul><p><?php echo 'The current post ID is ' . $_GET['post_id'] . '.'; ?></p>
+			</ul>
 
-			<?php
-			$query = new WP_Query(  array(
-				'post_type' => ['post', 'page'],
-				'post_status' => 'any',
+			<p>
+				<?php 
+				$post_id = isset( $_GET['post_id'] ) ? (int) $_GET['post_id'] : get_the_ID();
+				/* translators: 1: text, 2: post id */
+				printf( '%1$s %2$s',
+					__( 'The current post ID is', 'site-counts' ),
+					$post_id
+				);
+				?>
+			</p>
+
+			<?php $this->get_foo_baz_posts( $post_id ); ?>
+		</div>
+		<?php
+		return ob_get_clean();
+	}
+
+	/**
+	 * Gets posts with Foo and Baz.
+	 * get all posts with tag: foo and category: baz, then display the title.
+	 *
+	 * @param int $post_id - The post ID.
+	 * @return void
+	 */
+	private function get_foo_baz_posts( $post_id ) {
+		$query = new WP_Query(
+			array(
+				'post_type'					=> [ 'post', 'page' ],
+				'post_status'				=> 'any',
 				'date_query' => array(
 					array(
 						'hour'      => 9,
 						'compare'   => '>=',
 					),
 					array(
-						'hour' => 17,
-						'compare'=> '<=',
+						'hour'		=> 17,
+						'compare'	=> '<=',
 					),
 				),
-                'tag'  => 'foo',
-                'category_name'  => 'baz',
-				  'post__not_in' => [ get_the_ID() ],
-			));
+				'tag'						=> 'foo',
+				'category_name'				=> 'baz',
+				'no_found_rows'          	=> true,
+				'update_post_meta_cache'	=> false,
+			)
+		);
 
-			if ( $query->found_posts ) :
+		if ( $query->have_posts() ) :
+			$post_count = 0;
+			foreach ( $query->posts as $post ) {
+				if ( $post->ID != $post_id ) {
+					$post_count++;
+				}
+			}
+			?>
+			<h2>
+				<?php
+				/* translators: 1: post count, 2: text */
+				printf( '%d %s',
+					$post_count,
+					__( 'posts with the tag of foo and the category of baz', 'site-counts' ),
+				);
 				?>
-				 <h2>5 posts with the tag of foo and the category of baz</h2>
-                <ul>
-                <?php
+			</h2>
 
-                 foreach ( array_slice( $query->posts, 0, 5 ) as $post ) :
-                    ?><li><?php echo $post->post_title ?></li><?php
+			<ul>
+				<?php
+				$count = 0;
+				foreach ( $query->posts as $post ) :
+					$count++;
+					if ( $post->ID == $post_id ) continue;
+					?>
+					<li><?php echo esc_html( $post->post_title ); ?></li>
+					<?php
+					if ( $count > 5 ) break;
 				endforeach;
-			endif;
-		 	?>
+				?>
 			</ul>
-		</div>
-		<?php
-
-		return ob_get_clean();
+			<?php
+			wp_reset_postdata();
+		endif;
 	}
 }
